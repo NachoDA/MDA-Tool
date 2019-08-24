@@ -1,0 +1,33 @@
+QPushButton {
+    /*border: none;*/
+}
+
+    QPushButton#PrimaryRow {
+        background-color: #fdcb6e;
+        border-color: #fdcb6e;
+    }
+
+    QPushButton#SecondaryRow {
+        background-color: #ffeaa7;
+        border-color: #ffeaa7;
+    }
+
+    QPushButton#PrimaryCol {
+        background-color: #00cec9;
+        border-color: #00cec9;
+    }
+
+    QPushButton#SecondaryCol {
+        background-color: #81ecec;
+        border-color: #81ecec;
+    }
+
+    QPushButton#Discard {
+        background-color: #b2bec3;
+        border-color: #b2bec3;
+    }
+
+    QPushButton#Data {
+        background-color: #ffffff;
+        border-color: #ffffff;
+    }
