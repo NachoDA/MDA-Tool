@@ -30,3 +30,9 @@ class DataFile():
 
     def get_dataframe(self):
         return self._df
+
+    def get_num_cols(self):
+        return len(self._df.columns)
+
+    def get_num_rows(self):
+        return len(self._df)

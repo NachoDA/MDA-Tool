@@ -7,6 +7,8 @@ from GUI.MVAQWidget import MVAQWidget
 
 class EditDatasetWindow(View):
 
+    # TODO: Add option to add a observations ID column and fill it automatically (1, 2...)
+    # TODO: Add option to add a variable ID row and fill it automatically (Var1, Var2...)
     def __init__(self, dataframe_model, dataset_name, description):
         super().__init__()
         self._dataframe_model = dataframe_model
@@ -40,7 +42,7 @@ class EditDatasetWindow(View):
         self.primary_row_button.setText('Primary ID')
         self.primary_row_button.setObjectName('PrimaryRow')
         self.secondary_row_button = QPushButton(row_group_buttons)
-        self.secondary_row_button.setText('Secondary ID')
+        self.secondary_row_button.setText('Secondary IDs')
         self.secondary_row_button.setObjectName('SecondaryRow')
         row_group_layout.addWidget(self.primary_row_button)
         row_group_layout.addWidget(self.secondary_row_button)
@@ -52,7 +54,7 @@ class EditDatasetWindow(View):
         self.primary_col_button.setText('Primary ID')
         self.primary_col_button.setObjectName('PrimaryCol')
         self.secondary_col_button = QPushButton(col_group_buttons)
-        self.secondary_col_button.setText('Secondary ID')
+        self.secondary_col_button.setText('Secondary IDs')
         self.secondary_col_button.setObjectName('SecondaryCol')
         col_group_layout.addWidget(self.primary_col_button)
         col_group_layout.addWidget(self.secondary_col_button)

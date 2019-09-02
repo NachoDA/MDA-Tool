@@ -1,3 +1,19 @@
-QWidget{
-    background-color: #dfe9f5;
+/*QWidget{*/
+    /*background-color: #efefef;*/
+    /*padding:0px;margin:0px;*/
+/*}*/
+
+QMenuBar{
+    background-color: #efefef;
+    /*padding:0px;margin:0px;*/
+}
+
+QPushButton#FromMenuBar {
+    background-color: transparent;
+}
+
+QPushButton#FromMenuBar:hover{
+    border-style: solid;
+    border-color: #b2bec3;
+    background-color: QLinearGradient(spread:pad, x1: 0, y1: 1, x2: 0, y2: 0, stop: 0 rgba(150,180,200,50%),stop: 0.5 rgba(225,235,245,80%), stop: 1 rgba(225,235,245,50%));
 }

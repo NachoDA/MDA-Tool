@@ -17,6 +17,7 @@ class ModelsCreatorController(Controller):
         self._view = ModelsCreatorWindow(model_type,
                                          data_sets_manager.all_names_and_data_file(),
                                          self._models_manager.count())
+        self._view.select_last_data_set()
         self.make_connections()
 
     # TODO: Block window to avoid interaction in main window

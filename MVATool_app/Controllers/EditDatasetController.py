@@ -18,6 +18,9 @@ class EditDataSetController(Controller):
         self.make_connections()
 
     def make_connections(self):
+        # TODO: When closing window with cross, data set must not be created
+        # TODO: Change access to signals from View. Call _window must be avoided
+        # self._view._window.close_signal.connect(self.close)
         # rows
         self._view.primary_row_button.clicked.connect(self.add_primary_rows)
         self._view.secondary_row_button.clicked.connect(self.add_secondary_rows)
@@ -43,20 +46,34 @@ class EditDataSetController(Controller):
         self.add_data_rows()
         self.add_data_cols()
 
+    # TODO: Changes must be reflected when are done, not only when another click is done
     # ROWS
     def add_primary_rows(self):
         indexes = self._view.table.selectionModel().selectedRows()
-        self._data_set.add_primary_rows(indexes)
-        self.refresh_marked_rows()
+        if len(indexes) > 1:
+            # TODO: Add warning window
+            print('Primary row must be unique!')
+        if len(indexes) > 0:
+            first_index = indexes[0]
+            self._data_set.add_primary_rows(first_index)
+            self.refresh_marked_rows()
 
     def add_secondary_rows(self):
         indexes = self._view.table.selectionModel().selectedRows()
         self._data_set.add_secondary_rows(indexes)
         self.refresh_marked_rows()
 
-    def add_discard_rows(self):
-        indexes = self._view.table.selectionModel().selectedRows()
+    def add_discard_rows(self, indexes=None):
+        if indexes is None:
+            indexes = self._view.table.selectionModel().selectedRows()
         self._data_set.add_discard_rows(indexes)
+        self.refresh_marked_rows()
+
+    # TODO: Change this int functions in a more ellegant way
+    def add_discard_rows_int(self, indexes=None):
+        if indexes is None:
+            indexes = self._view.table.selectionModel().selectedRows()
+        self._data_set.add_discard_rows_int(indexes)
         self.refresh_marked_rows()
 
     def add_data_rows(self):
@@ -72,8 +89,13 @@ class EditDataSetController(Controller):
     # COLS
     def add_primary_cols(self):
         indexes = self._view.table.selectionModel().selectedColumns()
-        self._data_set.add_primary_cols(indexes)
-        self.refresh_marked_cols()
+        if len(indexes) > 1:
+            # TODO: Add warning window
+            print('Primary collumn must be unique!')
+        if len(indexes) > 0:
+            first_index = indexes[0]
+            self._data_set.add_primary_cols(first_index)
+            self.refresh_marked_cols()
 
     def add_secondary_cols(self):
         indexes = self._view.table.selectionModel().selectedColumns()

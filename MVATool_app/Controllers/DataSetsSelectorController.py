@@ -34,6 +34,9 @@ class DataSetsSelectorController(Controller):
     def cancel(self):
         self._view.close()
 
+    # TODO: Define behaviour when trying to edit a data set linked with a model
+    #  Posibility 1: Can't edit it. Explanation window. Only create a copy and edit that copy
+    #  Posibility 2: Warning: data set is linked with 1..., 2..., n... models. Can edit but must ¿remodel?
     def edit_selected(self):
         data_set = self._data_sets_manager.get_by_index(self._last_row_selected)
         self._edit_dataset_controller = EditDataSetController(

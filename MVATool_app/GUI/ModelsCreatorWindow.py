@@ -36,6 +36,12 @@ class ModelsCreatorWindow(View):
         layout.addWidget(tab_widget)
         layout.addLayout(below_layout)
 
+    # TODO: Adapt this to generic cases
+    def select_last_data_set(self):
+        combo = self.pca_creator.data_set_widget.data_sets_combo
+        last_index_combo = combo.count()
+        combo.setCurrentIndex(last_index_combo-1)
+
     def close(self):
         self._window.close()
 

@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from GUI.View import View
 from GUI.Style import get_style
+from GUI.GraphWidgets import VarianceExplainedGraph
 import pyqtgraph as pg
 import numpy as np
 
@@ -11,38 +12,70 @@ class ModelsManagerWindow(View):
 
     def __init__(self):
         super().__init__()
-        self.models_widgets = list()
         self.init_UI()
 
     def init_UI(self):
         self._window.resize(1100, 800)
         self._window.show()
 
+        self._models_widgets = list()
         self.scroll_area = QScrollArea(parent=self._window)
         self.connect_to_resize(self.resize)
         self.resize()
 
         self._layer_to_append = QVBoxLayout()
 
-        widget_container = QWidget()
-        widget_container.setLayout(self._layer_to_append)
+        self._widget_container = QWidget()
+        self._widget_container.setLayout(self._layer_to_append)
 
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.scroll_area.setWidget(widget_container)
+        self.scroll_area.setWidget(self._widget_container)
 
-        window_layer = QVBoxLayout()
-        window_layer.addWidget(widget_container)
+        self._window_layer = QVBoxLayout()
+        self._window_layer.addWidget(self._widget_container)
 
         self.scroll_area.show()
-        widget_container.show()
+        self._widget_container.show()
+
+    def remove_all_models(self):
+        self._models_widgets = list()
+        self._layer_to_append = QVBoxLayout()
+        self._widget_container.setLayout(self._layer_to_append)
 
     def add_PCA_model(self, name, data_set_name, variance_ratio):
         widget = PCAManagerWidget(self._window, name, data_set_name, variance_ratio)
+        self._models_widgets.append(widget)
         self._layer_to_append.addWidget(widget)
         print(name)
         return widget
+
+    def refresh_widget(self, name, data_set_name, variance_ratio):
+        for index, model_widget in enumerate(self._models_widgets):
+            if model_widget.name == name:
+                # TODO: make refresh works avoiding to restart all the window
+                pass
+                # widget = PCAManagerWidget(self._window, name, data_set_name, variance_ratio)
+                # self._models_widgets[index] = widget
+                # self._layer_to_append.removeWidget(name)
+
+                # model_widget.init_UI()
+                # model_widget.refresh_widget(variance_ratio)
+                # model_widget.repaint()
+                # model_widget.update()
+                # self._layer_to_append.update()
+                # self._window_layer.update()
+                # self.scroll_area.show()
+                # self.scroll_area.update()
+                # self.scroll_area.repaint()
+                # self._widget_container.show()
+                # self._widget_container.update()
+                # self._widget_container.repaint()
+                # self._window.show()
+                # self._window.update()
+                # self._window.repaint()
+
 
     def resize(self):
         w = self._window.width()
@@ -53,14 +86,16 @@ class PCAManagerWidget(QWidget):
 
     def __init__(self, parent, name, data_set_name, variance_ratio):
         super().__init__()
-        self._name = name
+        self.setObjectName(name)
+        self.name = name
         self._data_set_name = data_set_name
-        self._variance_ratio = variance_ratio
+        self.variance_ratio = variance_ratio
         self.setParent(parent)
         self.init_UI()
 
     def init_UI(self):
         self.setMinimumHeight(400)
+        print('------ init_UI')
 
         layout = QHBoxLayout(self)
         self._inner_layout = QHBoxLayout(self)
@@ -71,7 +106,7 @@ class PCAManagerWidget(QWidget):
         self.setLayout(layout)
 
         # Left - Title, labels and buttons
-        left_layout = QVBoxLayout(self)
+        self.left_layout = QVBoxLayout(self)
         # Title
         title_label = QLabel(self)
         title_label.setText('PCA')
@@ -91,7 +126,7 @@ class PCAManagerWidget(QWidget):
         labels_layout.addWidget(data_set_name_label)
         lines_layout = QVBoxLayout(self)
         name_line = QLineEdit(self)
-        name_line.setText(self._name)
+        name_line.setText(self.name)
         name_line.setReadOnly(True)
         data_set_line = QLineEdit(self)
         data_set_line.setText(self._data_set_name)
@@ -112,47 +147,60 @@ class PCAManagerWidget(QWidget):
         buttons_layout.addWidget(self.remove_button)
         buttons_box.setLayout(buttons_layout)
         # Components info
-        info_box = QGroupBox('Variance ratio', self)
-        info_layout = QHBoxLayout(self)
-        info = ''
-        for num, val in enumerate(self._variance_ratio):
-            info = info + 'Comp. ' + str(num+1) + ': ' + str(format(val,'.2f')) + '\n'
-        info_label = QLabel(self)
-        info_label.setText(info)
-        info_layout.addWidget(info_label)
-        info_box.setLayout(info_layout)
+        self.info_box = QGroupBox('Variance ratio', self)
+        self.info_layout = QHBoxLayout(self)
+        self._info_label = self.variance_ratio_label()
+        self.info_layout.addWidget(self._info_label)
+        self.info_box.setLayout(self.info_layout)
 
-        left_layout.addWidget(title_label)
-        left_layout.addWidget(labels_box)
-        left_layout.addWidget(buttons_box)
-        left_layout.addWidget(info_box)
-        left_layout.addStretch(1)
+        self.left_layout.addWidget(title_label)
+        self.left_layout.addWidget(labels_box)
+        self.left_layout.addWidget(buttons_box)
+        self.left_layout.addWidget(self.info_box)
+        self.left_layout.addStretch(1)
 
         # Right - Graph
         right_layout = QVBoxLayout(self)
         # Graph
-        graph = pg.PlotWidget(title='% variance explained per component')
-        graph.setMaximumHeight(400)
-        num_components = len(self._variance_ratio)
-        graph.setMouseEnabled(x=False, y=False)
-        x = np.linspace(1, num_components, num_components)
-        bar_width = 0.8
-        bar_graph = pg.BarGraphItem(x0=x,
-                                    width=bar_width,
-                                    height=self._variance_ratio,
-                                    brush=get_style().palette(2))
-        curve_item = pg.PlotCurveItem()
-        curve_pen = pg.mkPen(color=get_style().palette(5), width=5,
-                             style=QtCore.Qt.DashLine)
-        curve_item.setData(x=x+(bar_width/2), y=self._variance_ratio,
-                           pen=curve_pen)
-        graph.showGrid(x=True, y=True, alpha=0.3)
-        graph.addItem(bar_graph)
-        graph.addItem(curve_item)
+        self._plot = self.variance_ratio_plot()
 
-        right_layout.addWidget(graph)
+        right_layout.addWidget(self._plot)
         right_layout.addStretch(1)
 
-        self._inner_layout.addLayout(left_layout)
+        self._inner_layout.addLayout(self.left_layout)
         self._inner_layout.addLayout(right_layout)
         self._inner_layout.addStretch(1)
+
+    def variance_ratio_label(self):
+        info = ''
+        for num, val in enumerate(self.variance_ratio):
+            info = info + 'Comp. ' + str(num+1) + ': ' + str(format(val,'.2f')) + '\n'
+        # info = str(len(self.variance_ratio))
+        info_label = QLabel(self)
+        info_label.setText(info)
+        return info_label
+
+    def variance_ratio_plot(self):
+        graph = VarianceExplainedGraph(self.variance_ratio,
+                                       # parent=self,
+                                       title='% variance explained per component')
+        return graph
+
+    # def refresh_widget(self, variance_ratio):
+    #     self.variance_ratio = variance_ratio
+    #     print(self.variance_ratio)
+    #     self._info_label = self.variance_ratio_label()
+    #     print(self._info_label.text())
+    #     self._info_label.update()
+    #     self._info_label.repaint()
+    #     self.info_layout.update()
+    #     self.left_layout.update()
+    #     self.info_box.update()
+    #     self.info_box.repaint()
+    #     self._inner_layout.update()
+    #     self.update()
+    #     self.repaint()
+    #
+    #     self._plot = self.variance_ratio_plot()
+    #     self._plot.update()
+    #     self._plot.repaint()

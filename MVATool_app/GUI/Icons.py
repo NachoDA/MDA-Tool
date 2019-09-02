@@ -26,10 +26,19 @@ class Icons(object):
         self.make_icon("about", "icons/about.png")
         self.make_icon("license", "icons/license.png")
         self.make_icon("default", "icons/folder.png")
-        # Own
+        # Menu bar
+        self.make_icon("save", "icons/save.png")
+        # Data
         self.make_icon("new-data-set", "icons/new-data-set.png")
         self.make_icon("edit-data-set", "icons/edit-data-set.png")
+        # Models
         self.make_icon("models", "icons/models.png")
+        # Analyze
+        self.make_icon("scores", "icons/scores.png")
+        self.make_icon("loadings", "icons/loadings.png")
+        # Selector
+        self.make_icon("exclude", "icons/exclude.png")
+        self.make_icon("include", "icons/include.png")
 
     def make_icon(self, name, path):
         icon = QIcon()

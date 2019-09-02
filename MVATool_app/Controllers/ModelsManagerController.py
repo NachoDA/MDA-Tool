@@ -9,10 +9,8 @@ class ModelsManagerController(Controller):
         super().__init__()
         self._models_manager = models_manager
         self._view = ModelsManagerWindow()
-        for model in self._models_manager.get_models():
-            print('Num stats models: ' + str(len(self._models_manager.get_models())))
-            self.add_model(model)
         self.make_connections()
+        self.add_all_models()
 
     # TODO: Block window to avoid interaction in main window
     def make_connections(self):
@@ -22,15 +20,37 @@ class ModelsManagerController(Controller):
 
     def add_model(self, model):
         if isinstance(model, PCAModel):
-            model = self._view.add_PCA_model(model.name,
-                                             model.get_data_set_name(),
-                                             model.explained_variance_ratio())
-            # model.add_button.clicked.connect(self.add_component)
-            # model.remove_button.clicked.connect(self.remove_component)
+            widget_model = self._view.add_PCA_model(model.get_name(),
+                                                    model.get_data_set_name(),
+                                                    model.explained_variance_ratio())
+            widget_model.add_button.clicked.connect(lambda: self.add_component(model.get_name()))
+            widget_model.remove_button.clicked.connect(lambda: self.remove_component(model.get_name()))
 
-    def add_component(self):
-        pass
-        # index = self._view.models_layout.add_PCA_model
+    def add_component(self, model_name):
+        print(model_name)
+        model = self._models_manager.get(model_name)
+        model.add_component()
+        self.remove_all_models()
+        self.add_all_models()
+        # self._view.refresh_widget(model_name,
+        #                           model.get_data_set_name(),
+        #                           model.explained_variance_ratio())
 
-    def remove_component(self):
-        pass
+    def remove_component(self, model_name):
+        print(model_name)
+        model = self._models_manager.get(model_name)
+        model.remove_component()
+        self.remove_all_models()
+        self.add_all_models()
+        # self._view.refresh_widget(model_name,
+        #                           model.get_data_set_name(),
+        #                           model.explained_variance_ratio())
+
+    def remove_all_models(self):
+        self._view.init_UI()
+        # self._view.remove_all_models()
+
+    def add_all_models(self):
+        for model in self._models_manager.get_models():
+            print('Num stats models: ' + str(len(self._models_manager.get_models())))
+            self.add_model(model)

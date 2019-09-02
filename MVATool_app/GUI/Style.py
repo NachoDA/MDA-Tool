@@ -4,6 +4,9 @@ __author__ = 'magnus'
 
 style_instance = None
 
+# TODO: Redesign styles application. All items must be stylized calling this script.
+#  Better if this is done with stylesheets
+
 def get_style():
     global style_instance
     if not style_instance:

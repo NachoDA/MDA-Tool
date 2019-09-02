@@ -1,21 +1,39 @@
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QKeySequence as QKSec
+from PyQt5.QtGui import QKeySequence as QKSec, QIcon
+from PyQt5.QtWidgets import QFrame
 from GUI.RibbonButton import RibbonButton
 from GUI.Icons import get_icon
 from GUI.RibbonTextbox import RibbonTextbox
 from GUI.RibbonWidget import *
 from GUI.View import View
 import pyqtgraph as pg
+from PyQt5.Qt import Qt
 
 __author__ = 'mamj'
 
 class MainWindow(QMainWindow, View):
-    
+
+    # Data
     on_load_file = pyqtSignal()
     on_new_data_set = pyqtSignal()
     on_edit_data_set = pyqtSignal()
+    # Models
     on_models = pyqtSignal()
     on_create_PCA = pyqtSignal()
+    # Analyze
+    on_scores = pyqtSignal()
+    on_line_scores = pyqtSignal()
+    on_loadings = pyqtSignal()
+    on_hotelling = pyqtSignal()
+    on_SPE = pyqtSignal()
+    # Selection
+    on_exclude = pyqtSignal()
+    on_include = pyqtSignal()
+
+    def __init__(self, parent=None):
+        QWidget.__init__(self, parent=parent)
+        # self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.Qt.StrongFocus)
 
     def __init__(self):
         QMainWindow.__init__(self, None)
@@ -23,6 +41,7 @@ class MainWindow(QMainWindow, View):
         self.width = 1280
         self.height = 800
         self.window_icon = get_icon('icon')
+        self.setFocusPolicy(Qt.StrongFocus)
 
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
@@ -48,6 +67,15 @@ class MainWindow(QMainWindow, View):
         # Models
         self._models = self.add_action("Models", "models", "View models", True, self.on_models, QKSec.Paste)
         self._create_PCA = self.add_action("Create PCA", "models", "Create PCA", True, self.on_create_PCA, QKSec.Paste)
+        # Analyze
+        self._scores = self.add_action("Scatter scores", "scores", "View scores", True, self.on_scores, QKSec.Paste)
+        self._line_scores = self.add_action("Line scores", "line_scores", "View scores", True, self.on_line_scores, QKSec.Paste)
+        self._loadings = self.add_action("Loadings", "loadings", "View loadings", True, self.on_loadings, QKSec.Paste)
+        self._hotelling = self.add_action("Hotelling's T2", "hotelling", "View Hotelling's T2", True, self.on_hotelling, QKSec.Paste)
+        self._SPE = self.add_action("SPE-X", "spe", "View SPE-X", True, self.on_SPE, QKSec.Paste)
+        # Selection
+        self._exclude = self.add_action("Exclude", "exclude", "Create data set", True, self.on_exclude, QKSec.Paste)
+        self._include = self.add_action("Include", "include", "Create data set", True, self.on_include, QKSec.Paste)
 
         self._paste_action = self.add_action("Paste", "paste", "Paste from clipboard", True, self.on_paste, QKSec.Paste)
         self._zoom_action = self.add_action("Zoom", "zoom", "Zoom in on document", True, self.on_zoom)
@@ -60,8 +88,29 @@ class MainWindow(QMainWindow, View):
         self._text_box2 = RibbonTextbox("Text 2", self.on_text_box1_changed, 80)
         self._text_box3 = RibbonTextbox("Text 3", self.on_text_box1_changed, 80)
 
-        # Ribbon
+        # Menu bar
+        spacer = QtGui.QWidget()
+        spacer.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        layout = QHBoxLayout(self)
+        save_icon = QtGui.QPixmap("icons/save.png")
+        save_button = QPushButton(self)
+        save_button.setIcon(QIcon(save_icon))
+        save_button.setObjectName('FromMenuBar')
+        label = QLabel(self)
+        label.setText('Selected model: ')
+        self.model_selector = QComboBox(self)
+        self.model_selector.setMinimumWidth(300)
+        layout.addWidget(save_button)
+        layout.addWidget(spacer)
+        layout.addWidget(label)
+        layout.addWidget(self.model_selector)
+        self.menuBar().setMinimumHeight(45)
+        # TODO: reduce margins. That doesn't seems to work
+        self.menuBar().setContentsMargins(0, 0, 0, 0)
+        self.menuBar().setLayout(layout)
+        self.menuBar().setStyleSheet(get_style().get_stylesheet("main"))
 
+        # Ribbon
         self._ribbon = RibbonWidget(self)
         self.addToolBar(self._ribbon)
         self.init_ribbon()
@@ -77,6 +126,7 @@ class MainWindow(QMainWindow, View):
         return action
 
     def init_ribbon(self):
+        # Data
         home_tab = self._ribbon.add_ribbon_tab("Data")
         file_pane = home_tab.add_ribbon_pane("File")
         file_pane.add_ribbon_widget(RibbonButton(self, self._load_file_action, True))
@@ -96,16 +146,51 @@ class MainWindow(QMainWindow, View):
         view_panel.add_ribbon_widget(RibbonButton(self, self._zoom_action, True))
         home_tab.add_spacer()
 
+        # Models
         models_tab = self._ribbon.add_ribbon_tab("Models")
         manage = models_tab.add_ribbon_pane("Manage")
         manage.add_ribbon_widget(RibbonButton(self, self._models, True))
         latent_variable = models_tab.add_ribbon_pane("Latent variable")
         latent_variable.add_ribbon_widget(RibbonButton(self, self._create_PCA, True))
-
+        # Analyze
+        analyze_tab = self._ribbon.add_ribbon_tab('Analyze')
+        latent_variable_models = analyze_tab.add_ribbon_pane('Latent variable models')
+        latent_variable_models.add_ribbon_widget(RibbonButton(self, self._scores, True))
+        latent_variable_models.add_ribbon_widget(RibbonButton(self, self._line_scores, True))
+        latent_variable_models.add_ribbon_widget(RibbonButton(self, self._loadings, True))
+        latent_variable_models.add_ribbon_widget(RibbonButton(self, self._hotelling, True))
+        latent_variable_models.add_ribbon_widget(RibbonButton(self, self._SPE, True))
+        # About
         about_tab = self._ribbon.add_ribbon_tab("About")
         info_panel = about_tab.add_ribbon_pane("Info")
         info_panel.add_ribbon_widget(RibbonButton(self, self._about_action, True))
         info_panel.add_ribbon_widget(RibbonButton(self, self._license_action, True))
+
+    # TODO: Build a system to have a context tab (Selection, ...) and not only selection
+    # "fixed tabs" and "context tabs"
+    def create_selection_tab(self):
+        self._selection_tab = self._ribbon.add_ribbon_tab("Selection")
+        create_data_set_panel = self._selection_tab.add_ribbon_pane("Create new data set")
+        create_data_set_panel.add_ribbon_widget(RibbonButton(self, self._exclude, True))
+        create_data_set_panel.add_ribbon_widget(RibbonButton(self, self._include, True))
+        # TODO: Create button "add to class". With that, you can assign obs to 1) an existing
+        #  classification with a new value or a an existing one; or 2) create a new column
+        #  to classify
+        self._ribbon.select_ribbon_tab(self._selection_tab)
+
+    def delete_selection_tab(self):
+        self._ribbon.remove_ribbon_tab(self._selection_tab)
+        self._selection_tab = None
+
+    def select_tab(self, tab):
+        self._ribbon.select_ribbon_tab(tab)
+
+    def get_current_tab(self):
+        return self._ribbon.get_current_tab()
+
+    # def eventFilter(self, source, event):
+    #     if event.type() == QEvent.FocusOut:
+    #         print(str(source)+' - Looooooooooooooooost focus')
 
     def closeEvent(self, close_event):
         pass
