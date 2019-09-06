@@ -54,6 +54,8 @@ class DataSetsManager():
 # TODO: All dataframe operations must be done in DataFiles as a wrap
 # TODO: How to manage datafiles additional data created by user? New class named
 #  dataExtension that wraps data files? Maybe each change of this type is a decorator?
+# TODO: Design "memory" for calculations if there have been no changes. For data set,
+#  for models... Example: correlation calculation.
 class DataSet():
 
     def __init__(self, name, data_file, description):
@@ -81,7 +83,7 @@ class DataSet():
         if preprocessed:
             numeric_data = self.preprocess_data(numeric_data)
 
-        return numeric_data
+        return numeric_data.astype(float)
 
     def preprocess_data(self, df):
         scaled = preprocessing.scale(df)
@@ -191,3 +193,7 @@ class DataSet():
             row = ['Var'+str(i) for i in all_cols]
         var_names = [row[i] for i in self.get_data_cols()]
         return var_names
+
+    def correlation_matrix(self):
+        df = self.get_numeric_data(preprocessed=False)
+        return df.corr().values

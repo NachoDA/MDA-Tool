@@ -20,12 +20,20 @@ class MainWindow(QMainWindow, View):
     # Models
     on_models = pyqtSignal()
     on_create_PCA = pyqtSignal()
+    # Explore
+    on_line_plot = pyqtSignal()
+    on_obs_plot = pyqtSignal()
+    on_vars_plot = pyqtSignal()
+    on_scatter = pyqtSignal()
+    on_populations = pyqtSignal()
+    on_correlation = pyqtSignal()
     # Analyze
+    on_variance_explained = pyqtSignal()
     on_scores = pyqtSignal()
     on_line_scores = pyqtSignal()
     on_loadings = pyqtSignal()
-    on_hotelling = pyqtSignal()
-    on_SPE = pyqtSignal()
+    on_t2_hotelling = pyqtSignal()
+    on_spe = pyqtSignal()
     # Selection
     on_exclude = pyqtSignal()
     on_include = pyqtSignal()
@@ -67,12 +75,20 @@ class MainWindow(QMainWindow, View):
         # Models
         self._models = self.add_action("Models", "models", "View models", True, self.on_models, QKSec.Paste)
         self._create_PCA = self.add_action("Create PCA", "models", "Create PCA", True, self.on_create_PCA, QKSec.Paste)
+        # Explore
+        self._line_plot = self.add_action("Line plot", "line_plot", "Line plot", True, self.on_line_plot, QKSec.Paste)
+        self._obs_plot = self.add_action("Obs plot", "obs_plot", "Observations plot", True, self.on_obs_plot, QKSec.Paste)
+        self._vars_plot = self.add_action("Vars plot", "obs_plot", "Observations plot", True, self.on_vars_plot, QKSec.Paste)
+        self._scatter = self.add_action("Scatter", "scatter", "Scatter plot", True, self.on_scatter, QKSec.Paste)
+        self._populations = self.add_action("Populations", "populations", "Populations plot", True, self.on_populations, QKSec.Paste)
+        self._correlation_plot = self.add_action("Correlation", "correlation", "Plot correlation", True, self.on_correlation, QKSec.Paste)
         # Analyze
-        self._scores = self.add_action("Scatter scores", "scores", "View scores", True, self.on_scores, QKSec.Paste)
+        self._variance_plot = self.add_action("Variance exp.", "variance_explained", "Variance explained plot", True, self.on_variance_explained, QKSec.Paste)
+        self._scores = self.add_action("Score plot", "scores", "View scores", True, self.on_scores, QKSec.Paste)
         self._line_scores = self.add_action("Line scores", "line_scores", "View scores", True, self.on_line_scores, QKSec.Paste)
         self._loadings = self.add_action("Loadings", "loadings", "View loadings", True, self.on_loadings, QKSec.Paste)
-        self._hotelling = self.add_action("Hotelling's T2", "hotelling", "View Hotelling's T2", True, self.on_hotelling, QKSec.Paste)
-        self._SPE = self.add_action("SPE-X", "spe", "View SPE-X", True, self.on_SPE, QKSec.Paste)
+        self._t2_hotelling = self.add_action("Hotelling's T2", "hotelling", "View Hotelling's T2", True, self.on_t2_hotelling, QKSec.Paste)
+        self._SPE = self.add_action("SPE-X", "spe", "View SPE-X", True, self.on_spe, QKSec.Paste)
         # Selection
         self._exclude = self.add_action("Exclude", "exclude", "Create data set", True, self.on_exclude, QKSec.Paste)
         self._include = self.add_action("Include", "include", "Create data set", True, self.on_include, QKSec.Paste)
@@ -89,18 +105,32 @@ class MainWindow(QMainWindow, View):
         self._text_box3 = RibbonTextbox("Text 3", self.on_text_box1_changed, 80)
 
         # Menu bar
+        # Icons
         spacer = QtGui.QWidget()
         spacer.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         layout = QHBoxLayout(self)
+        new_project_icon = QtGui.QPixmap("icons/save.png")
+        self.new_project_button = QPushButton(self)
+        self.new_project_button.setIcon(QIcon(new_project_icon))
+        self.new_project_button.setObjectName('FromMenuBar')
+        load_icon = QtGui.QPixmap("icons/save.png")
+        self.load_button = QPushButton(self)
+        self.load_button.setIcon(QIcon(load_icon))
+        self.load_button.setObjectName('FromMenuBar')
         save_icon = QtGui.QPixmap("icons/save.png")
-        save_button = QPushButton(self)
-        save_button.setIcon(QIcon(save_icon))
-        save_button.setObjectName('FromMenuBar')
+        self.save_button = QPushButton(self)
+        self.save_button.setIcon(QIcon(save_icon))
+        self.save_button.setObjectName('FromMenuBar')
+        # Model selector
         label = QLabel(self)
+        # TODO: Add a data set selector. By default, selected data set is the data set from the
+        #  last selected model. Indicate when a selected data set doesn't correspond to selected model
         label.setText('Selected model: ')
         self.model_selector = QComboBox(self)
         self.model_selector.setMinimumWidth(300)
-        layout.addWidget(save_button)
+        layout.addWidget(self.new_project_button)
+        layout.addWidget(self.load_button)
+        layout.addWidget(self.save_button)
         layout.addWidget(spacer)
         layout.addWidget(label)
         layout.addWidget(self.model_selector)
@@ -146,6 +176,16 @@ class MainWindow(QMainWindow, View):
         view_panel.add_ribbon_widget(RibbonButton(self, self._zoom_action, True))
         home_tab.add_spacer()
 
+        # Explore
+        explore_tab = self._ribbon.add_ribbon_tab('Explore')
+        # univariate = explore_tab.add_ribbon_pane('Univariate')
+        # univariate.add_ribbon_widget(RibbonButton(self, self._line_plot, True))
+        multivariate = explore_tab.add_ribbon_pane('Multivariate')
+        multivariate.add_ribbon_widget(RibbonButton(self, self._obs_plot, True))
+        multivariate.add_ribbon_widget(RibbonButton(self, self._vars_plot, True))
+        multivariate.add_ribbon_widget(RibbonButton(self, self._scatter, True))
+        multivariate.add_ribbon_widget(RibbonButton(self, self._populations, True))
+        multivariate.add_ribbon_widget(RibbonButton(self, self._correlation_plot, True))
         # Models
         models_tab = self._ribbon.add_ribbon_tab("Models")
         manage = models_tab.add_ribbon_pane("Manage")
@@ -155,10 +195,11 @@ class MainWindow(QMainWindow, View):
         # Analyze
         analyze_tab = self._ribbon.add_ribbon_tab('Analyze')
         latent_variable_models = analyze_tab.add_ribbon_pane('Latent variable models')
+        latent_variable_models.add_ribbon_widget(RibbonButton(self, self._variance_plot, True))
         latent_variable_models.add_ribbon_widget(RibbonButton(self, self._scores, True))
         latent_variable_models.add_ribbon_widget(RibbonButton(self, self._line_scores, True))
         latent_variable_models.add_ribbon_widget(RibbonButton(self, self._loadings, True))
-        latent_variable_models.add_ribbon_widget(RibbonButton(self, self._hotelling, True))
+        latent_variable_models.add_ribbon_widget(RibbonButton(self, self._t2_hotelling, True))
         latent_variable_models.add_ribbon_widget(RibbonButton(self, self._SPE, True))
         # About
         about_tab = self._ribbon.add_ribbon_tab("About")

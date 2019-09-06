@@ -76,7 +76,6 @@ class ModelsManagerWindow(View):
                 # self._window.update()
                 # self._window.repaint()
 
-
     def resize(self):
         w = self._window.width()
         h = self._window.height()
@@ -183,7 +182,7 @@ class PCAManagerWidget(QWidget):
     def variance_ratio_plot(self):
         graph = VarianceExplainedGraph(self.variance_ratio,
                                        # parent=self,
-                                       title='% variance explained per component')
+                                       title='Explained variance ratio per component')
         return graph
 
     # def refresh_widget(self, variance_ratio):

@@ -17,6 +17,8 @@ class SelectorManager():
     # TODO: Communication between model and view layers must be avoided
     #  Probably, this can be achieved by creating a graph in the model layer?
     #  And more: probably this kind of alerts must be done with events
+    # TODO: Avoid errors when data_sets changes (per example, when one observation
+    #  is discarded
     def new_selection(self, graph, selected):
         data_set = self.get_data_set(graph)
         for graph in self._data_sets[data_set]:

@@ -14,6 +14,7 @@ from Models.Datasets import DataSetsManager
 from Models.DataFiles import DataFilesManager
 from Models.StatModels import StatModelsManager
 from Models.SelectorManager import SelectorManager
+import Models.ProjectsManager as project_manager
 import copy
 
 
@@ -31,8 +32,7 @@ class MainWindowController(Controller):
 
         self.data_sets_manager = DataSetsManager()
         self.data_files_manager = DataFilesManager()
-        self.models_manager = StatModelsManager(self.set_current_model,
-                                                self.fill_models_to_selector)
+        self.models_manager = StatModelsManager(self.set_current_model, self.fill_models_to_selector)
         self.selector_manager = SelectorManager()
 
         self._exists_selection_tab = False
@@ -42,25 +42,41 @@ class MainWindowController(Controller):
         # TODO: Organize that in a good way. Too many callbacks... that smells bad
         self._analyze_latent_controller =\
             AnalyzeLatentController(self.models_manager, self.selector_manager,
-                                    self.create_selection_tab,
-                                    self.delete_selection_tab,
+                                    self.create_selection_tab, self.delete_selection_tab,
                                     lambda: self._app.activeWindow())
+        self._explore_controller =\
+            ExploreController(self.data_sets_manager, self.selector_manager,
+                              self.create_selection_tab, self.delete_selection_tab,
+                              lambda: self._app.activeWindow())
         self.fill_models_to_selector()
 
     def make_connections(self):
         # Menu bar
+        self._view.new_project_button.clicked.connect(self.new_project)
+        self._view.load_button.clicked.connect(self.load_project)
+        self._view.save_button.clicked.connect(self.save_project)
         self._view.model_selector.currentTextChanged.connect(self.combo_box_selector_changed)
         # Data
         self._view.on_load_file.connect(self.on_load_file)
         self._view.on_new_data_set.connect(self.on_new_data_set)
         self._view.on_edit_data_set.connect(self.on_edit_data_set)
+        # Explore
+        self._view.on_line_plot.connect(self.on_line_plot)
+        self._view.on_obs_plot.connect(self.on_obs_plot)
+        self._view.on_vars_plot.connect(self.on_vars_plot)
+        self._view.on_scatter.connect(self.on_scatter)
+        self._view.on_populations.connect(self.on_populations)
+        self._view.on_correlation.connect(self.on_correlation)
         # Models
         self._view.on_models.connect(self.on_models)
         self._view.on_create_PCA.connect(self.on_create_PCA)
         # Analyze
+        self._view.on_variance_explained.connect(self.on_variance_explained)
         self._view.on_scores.connect(self.on_scores)
         self._view.on_line_scores.connect(self.on_line_scores)
         self._view.on_loadings.connect(self.on_loadings)
+        self._view.on_t2_hotelling.connect(self.on_t2_hotelling)
+        self._view.on_spe.connect(self.on_spe)
         # Selector
         self._view.on_exclude.connect(self.on_exclude)
         self._view.on_include.connect(self.on_include)
@@ -93,6 +109,25 @@ class MainWindowController(Controller):
             self._exists_selection_tab = False
 
     # -------------      signals       -----------------
+
+    def new_project(self):
+        pass
+
+    def load_project(self):
+        path = 'C:\\Users\\Nacho\\Documents\\MVATool\\Projects'
+        file_name = 'test.mva'
+        project = project_manager.Project(self.data_files_manager, self.data_sets_manager,
+                                          self.models_manager)
+        project_manager.save(path, file_name, project)
+
+    def save_project(self):
+        path = 'C:\\Users\\Nacho\\Documents\\MVATool\\Projects'
+        file_name = 'test.mva'
+        project = project_manager.load(path, file_name)
+        self.data_files_manager = project.data_files_manager
+        self.data_sets_manager = project.data_sets_manager
+        # self.models_manager = project.models_manager
+        # self.selector_manager = project.selector_manager
 
     def combo_box_selector_changed(self):
         if self.models_manager.count() > 0:
@@ -139,6 +174,26 @@ class MainWindowController(Controller):
         else:
             self._data_sets_selector_controller = DataSetsSelectorController(self.data_sets_manager)
 
+    # Explore
+    def on_line_plot(self):
+        pass
+
+    def on_obs_plot(self):
+        self._explore_controller.create_obs_graph()
+
+    def on_vars_plot(self):
+        self._explore_controller.create_vars_graph()
+
+    def on_scatter(self):
+        pass
+
+    def on_populations(self):
+        self._explore_controller.create_population_graph()
+
+    def on_correlation(self):
+        print('on_correlation')
+        self._explore_controller.create_correlation_graph()
+
     # Models
     def on_models(self):
         self._models_manager_controller = ModelsManagerController(self.models_manager)
@@ -148,6 +203,9 @@ class MainWindowController(Controller):
                                                                   self.data_sets_manager,
                                                                   ModelType.PCA)
     # Analyze
+    def on_variance_explained(self):
+        self._analyze_latent_controller.variance_explained_graph()
+
     def on_scores(self):
         self._analyze_latent_controller.create_scores_graph()
 
@@ -156,6 +214,12 @@ class MainWindowController(Controller):
 
     def on_loadings(self):
         self._analyze_latent_controller.create_loading_graph()
+
+    def on_t2_hotelling(self):
+        self._analyze_latent_controller.create_t2_hotelling_graph()
+
+    def on_spe(self):
+        self._analyze_latent_controller.create_spe_graph()
 
     # Selection
     def on_exclude(self):
