@@ -64,7 +64,7 @@ class MainWindowController(Controller):
         self._view.on_line_plot.connect(self.on_line_plot)
         self._view.on_obs_plot.connect(self.on_obs_plot)
         self._view.on_vars_plot.connect(self.on_vars_plot)
-        self._view.on_scatter.connect(self.on_scatter)
+        # self._view.on_scatter.connect(self.on_scatter)
         self._view.on_populations.connect(self.on_populations)
         self._view.on_correlation.connect(self.on_correlation)
         # Models
@@ -75,6 +75,7 @@ class MainWindowController(Controller):
         self._view.on_scores.connect(self.on_scores)
         self._view.on_line_scores.connect(self.on_line_scores)
         self._view.on_loadings.connect(self.on_loadings)
+        self._view.on_line_loadings.connect(self.on_line_loadings)
         self._view.on_t2_hotelling.connect(self.on_t2_hotelling)
         self._view.on_spe.connect(self.on_spe)
         # Selector
@@ -113,19 +114,20 @@ class MainWindowController(Controller):
     def new_project(self):
         pass
 
-    def load_project(self):
+    def save_project(self):
         path = 'C:\\Users\\Nacho\\Documents\\MVATool\\Projects'
         file_name = 'test.mva'
         project = project_manager.Project(self.data_files_manager, self.data_sets_manager,
                                           self.models_manager)
         project_manager.save(path, file_name, project)
 
-    def save_project(self):
+    def load_project(self):
         path = 'C:\\Users\\Nacho\\Documents\\MVATool\\Projects'
         file_name = 'test.mva'
         project = project_manager.load(path, file_name)
         self.data_files_manager = project.data_files_manager
         self.data_sets_manager = project.data_sets_manager
+        self._explore_controller.set_data_sets_manager(self.data_sets_manager)
         # self.models_manager = project.models_manager
         # self.selector_manager = project.selector_manager
 
@@ -214,6 +216,9 @@ class MainWindowController(Controller):
 
     def on_loadings(self):
         self._analyze_latent_controller.create_loading_graph()
+
+    def on_line_loadings(self):
+        self._analyze_latent_controller.create_line_loading_graph()
 
     def on_t2_hotelling(self):
         self._analyze_latent_controller.create_t2_hotelling_graph()

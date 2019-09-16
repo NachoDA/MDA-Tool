@@ -35,6 +35,18 @@ class DataFrameModel(QtCore.QAbstractTableModel):
     def dataFrame(self):
         return self._dataframe
 
+    def select(self, rows=None, cols=None):
+        if rows is None:
+            selected = self._dataframe.iloc[:, cols]
+        elif cols is None:
+            selected = self._dataframe.iloc[rows, :]
+        elif rows is None and cols is None:
+            selected = -1
+        else:
+            selected = self._dataframe.iloc[rows, cols]
+
+        return selected
+
     dataFrame = QtCore.pyqtProperty(pd.DataFrame, fget=dataFrame, fset=setDataFrame)
 
     @QtCore.pyqtSlot(int, QtCore.Qt.Orientation, result=str)

@@ -1,5 +1,28 @@
 from sklearn import preprocessing
 import pandas as pd
+import numpy as np
+from enum import IntEnum
+
+
+def count_frequency(my_list):
+    freq = {}
+    for item in my_list:
+        if item in freq:
+            freq[item] += 1
+        else:
+            freq[item] = 1
+    return freq
+
+class ScaleType(IntEnum):
+    unitary = 0
+    pareto = 1
+    equal_weigh = 2
+
+class MissingStrategy(IntEnum):
+    mean = 1
+    discard_row = 2
+    discard_column = 3
+    knn_imputation = 4
 
 class DataSetsManager():
 
@@ -70,25 +93,78 @@ class DataSet():
         self.secondary_cols = list()
         self.discarded_cols = list()
 
+        self._rows_scale_group = None
+        self._scale_per_group = None
+        self._missing_strategy = MissingStrategy.mean
+
     # Allow comparison between data sets. Used in dict
     def __hash__(self):
         return hash(str(self))
 
-    def get_numeric_data(self, preprocessed=False):
+    def get_numeric_data(self, preprocessed=False, apply_missing=False):
         df = self.data_file.get_dataframe()
+
         data_rows = self.get_data_rows()
         data_cols = self.get_data_cols()
         numeric_data = df.iloc[data_rows, data_cols]
+
+        # if apply_missing:
+        #     numeric_data = self.apply_missing(numeric_data)
+
+        numeric_data = numeric_data.astype(float)
 
         if preprocessed:
             numeric_data = self.preprocess_data(numeric_data)
 
         return numeric_data.astype(float)
 
+    # TODO: Study pass these by reference to optimize it
     def preprocess_data(self, df):
-        scaled = preprocessing.scale(df)
-        preprocessed_data = pd.DataFrame(scaled)
+        data = df.values
+        data = self.center_data(data)
+        data = self.scale(data, self._rows_scale_group, self._scale_per_group)
+        preprocessed_data = pd.DataFrame(data)
         return preprocessed_data
+
+    def apply_missing(self, df):
+        matrix = df.values
+        func = None
+        if self._missing_strategy == MissingStrategy.mean:
+            func = lambda x, y: x+y
+            print('mean')
+        for i_col in range(matrix.shape[1]):
+            # non_numeric = df.loc[~df.iloc[:, i_col].astype(str).str.isdigit()]
+            non_numeric = df.iloc[:, i_col].astype(str).str.isdecimal()
+            print('non_numeric ' + str(i_col) + ':\n' + str(non_numeric))
+
+        df = pd.DataFrame(matrix)
+        return df
+
+    def center_data(self, matrix):
+        m = np.mean(matrix, axis=0)
+        centered_matrix = matrix - m
+        return centered_matrix
+
+    def scale(self, matrix, rows_scale_group, scale_per_group):
+        freq = count_frequency(rows_scale_group)
+        for i_col, scale_group in enumerate(rows_scale_group):
+            scale_type = ScaleType(scale_per_group[scale_group])
+            if scale_type == ScaleType.unitary:
+                # scale_factor = np.std(matrix[i_col], axis=0)
+                scale_factor = np.std(matrix[:, i_col])
+            elif scale_type == ScaleType.pareto:
+                m = freq[scale_group]
+                std = np.std(matrix[:, i_col])
+                scale_factor = std * (m ** (1/4))
+            elif scale_type == ScaleType.equal_weigh:
+                m = freq[scale_group]
+                std = np.std(matrix[:, i_col])
+                scale_factor = std * (m ** (1/2))
+            else:
+                print('Scale type not valid')
+            matrix[:, i_col] = matrix[:, i_col] / scale_factor
+        matrix[np.isnan(matrix)] = 0
+        return matrix
 
     def get_name_and_data_file(self):
         return self.name + ' : ' + self.data_file.get_name()
@@ -117,6 +193,11 @@ class DataSet():
         cols_to_remove = self.primary_cols + self.secondary_cols + self.discarded_cols
         data_cols = list(set(all_cols) - set(cols_to_remove))
         return data_cols
+
+    # Get all the column, not only ids
+    def get_secondary_cols(self):
+        df = self.data_file.get_dataframe()
+        return df.iloc[:, self.secondary_cols]
 
     # ROWS
     def add_primary_rows(self, index):  # =QtCore.Qt. .QtModelIndex()):
@@ -194,6 +275,27 @@ class DataSet():
         var_names = [row[i] for i in self.get_data_cols()]
         return var_names
 
+    # TODO: Long time consumer algorithms calculate in background and allow continue
+    #  ¿New class? With a threshold of estimated time. If grater than threshold,
+    #  show option if whant to calculate in background
     def correlation_matrix(self):
         df = self.get_numeric_data(preprocessed=False)
+        print(df.corr().values)
         return df.corr().values
+
+    def set_scales(self, rows_scale_group, scale_per_group):
+        if len(rows_scale_group) == len(self.var_names()):
+            self._rows_scale_group = rows_scale_group
+            self._scale_per_group = scale_per_group
+        else:
+            # TODO: Error message
+            print('There are different number of scales and variables')
+
+    def set_missing_strategy(self, missing_strategy):
+        self._missing_strategy = missing_strategy
+
+    def get_rows_scale_group(self):
+        return self._rows_scale_group
+
+    def get_scale_per_group(self):
+        return self._scale_per_group

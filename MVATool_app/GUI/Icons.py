@@ -28,14 +28,25 @@ class Icons(object):
         self.make_icon("default", "icons/folder.png")
         # Menu bar
         self.make_icon("save", "icons/save.png")
+        self.make_icon("load_project", "icons/load_project.png")
         # Data
         self.make_icon("new-data-set", "icons/new-data-set.png")
         self.make_icon("edit-data-set", "icons/edit-data-set.png")
+        # Exploratory
+        self.make_icon("obs_plot", "icons/obs_plot.png")
+        self.make_icon("vars_plot", "icons/vars_plot.png")
+        self.make_icon("populations", "icons/populations.png")
+        self.make_icon("correlation", "icons/correlation.png")
         # Models
         self.make_icon("models", "icons/models.png")
         # Analyze
+        self.make_icon("variance_explained", "icons/variance_explained.png")
         self.make_icon("scores", "icons/scores.png")
+        self.make_icon("line_scores", "icons/line_scores.png")
         self.make_icon("loadings", "icons/loadings.png")
+        self.make_icon("line_loadings", "icons/line_loadings.png")
+        self.make_icon("hotelling", "icons/hotelling.png")
+        self.make_icon("spe", "icons/spe.png")
         # Selector
         self.make_icon("exclude", "icons/exclude.png")
         self.make_icon("include", "icons/include.png")

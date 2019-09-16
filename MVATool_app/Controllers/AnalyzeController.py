@@ -9,7 +9,7 @@ class GraphController(Controller):
         self._selector_manager = selector_manager
         self._create_selector_tab = create_selector_tab
         self._delete_selection_tab = delete_selection_tab
-        self._graphs = list() # Just to avoid the destruction by the garbage collector
+        self._graphs = list()  # Just to avoid the destruction by the garbage collector
 
     def make_connections_focus(self, graph):
         graph.focus_in_signal.connect(lambda: self.focus_in_selection_graph(graph))
@@ -69,8 +69,10 @@ class ExploreController(GraphController):
         self._last_graph_focus = None
 
     def create_obs_graph(self):
-        if self._data_sets_manager.count() > 0:
-            data_set = self._data_sets_manager.get_by_index(0)
+        data_set_count = self._data_sets_manager.count()
+        if data_set_count > 0:
+            last_data_set = data_set_count - 1
+            data_set = self._data_sets_manager.get_by_index(last_data_set)
             data_set_list = self._data_sets_manager.all_names()
             graph = ObsGraph(GraphType.obs_graph, data_set.name, data_set_list)
             data = data_set.get_numeric_data(preprocessed=False)
@@ -83,8 +85,10 @@ class ExploreController(GraphController):
             self._selector_manager.register_new_graph(data_set, graph)
 
     def create_vars_graph(self):
-        if self._data_sets_manager.count() > 0:
-            data_set = self._data_sets_manager.get_by_index(0)
+        data_set_count = self._data_sets_manager.count()
+        if data_set_count > 0:
+            last_data_set = data_set_count - 1
+            data_set = self._data_sets_manager.get_by_index(last_data_set)
             data_set_list = self._data_sets_manager.all_names()
             graph = ObsGraph(GraphType.vars_graph, data_set.name, data_set_list)
             data = data_set.get_numeric_data(preprocessed=False)
@@ -97,8 +101,10 @@ class ExploreController(GraphController):
             graph.selector_data_set.currentIndexChanged.connect(lambda: self.selector_changed(graph))
 
     def create_population_graph(self):
-        if self._data_sets_manager.count() > 0:
-            data_set = self._data_sets_manager.get_by_index(0)
+        data_set_count = self._data_sets_manager.count()
+        if data_set_count > 0:
+            last_data_set = data_set_count - 1
+            data_set = self._data_sets_manager.get_by_index(last_data_set)
             data_set_list = self._data_sets_manager.all_names()
             graph = PopulationsGraph(GraphType.populations, data_set.name, data_set_list)
             data = data_set.get_numeric_data(preprocessed=False)
@@ -113,8 +119,10 @@ class ExploreController(GraphController):
     def create_correlation_graph(self):
         print('create_correlation_graph')
         print('self._data_sets_manager.count(): ' + str(self._data_sets_manager.count()))
-        if self._data_sets_manager.count() > 0:
-            data_set = self._data_sets_manager.get_by_index(0)
+        data_set_count = self._data_sets_manager.count()
+        if data_set_count > 0:
+            last_data_set = data_set_count - 1
+            data_set = self._data_sets_manager.get_by_index(last_data_set)
             var_names = data_set.var_names()
             data_set_list = self._data_sets_manager.all_names()
             graph = CorrelationPlot(GraphType.correlation, data_set.name, data_set_list)
@@ -155,6 +163,8 @@ class ExploreController(GraphController):
             var_names = data_set.var_names()
             graph.set_grid(corr, var_names)
 
+    def set_data_sets_manager(self, data_sets_manager):
+        self.data_sets_manager = data_sets_manager
 
 class AnalyzeLatentController(GraphController):
 
@@ -223,16 +233,33 @@ class AnalyzeLatentController(GraphController):
         pcx, pcy = 0, 1
         model = self._models_manager.get_current_model()
         if isinstance(model, PCAModel):
-            loadings = model.loadings(pcx, pcy)
-            print('loadings: ' + str(loadings))
+            loadings = model.loadings2(pcx, pcy)
             graph = ScatterlotTwoComponents(type=GraphType.loading_plot,
                                             model_name=model.get_name(),
                                             points=loadings,
                                             num_components=model.get_current_num_component())
             graph.set_points_labels(model.get_data_set().var_names())
+            self._graphs.append(graph)
             graph.show()
             graph.selector_PCX.currentIndexChanged.connect(lambda: self.pc_changed(model, graph))
             graph.selector_PCY.currentIndexChanged.connect(lambda: self.pc_changed(model, graph))
+        else:
+            # TODO: Add alert. Or better: disable button when no latent variable model is selected
+            print("This model hasn't score plot!")
+
+    def create_line_loading_graph(self):
+        pc = 0
+        model = self._models_manager.get_current_model()
+        if isinstance(model, PCAModel):
+            loadings = model.loadings(pc)
+            graph = LinePlot(type=GraphType.loading_line_plot,
+                             model_name=model.get_name(),
+                             points=loadings,
+                             num_components=model.get_current_num_component(),
+                             var_names=model.get_data_set().var_names())
+            self._graphs.append(graph)
+            graph.show()
+            graph.selector_PC.currentIndexChanged.connect(lambda: self.pc_changed(model, graph))
         else:
             # TODO: Add alert. Or better: disable button when no latent variable model is selected
             print("This model hasn't score plot!")
@@ -262,7 +289,9 @@ class AnalyzeLatentController(GraphController):
 
     def create_spe_graph(self):
         model = self._models_manager.get_current_model()
-        pc = model.get_current_num_component()-1
+        # pc = model.get_current_num_component()-1
+        pc = model.get_current_num_component()
+        pc = 2
         if isinstance(model, PCAModel):
             spe = model.spe(pc)
             graph = LinePlot(type=GraphType.spe,
@@ -278,6 +307,7 @@ class AnalyzeLatentController(GraphController):
             print('spe_95: ' + str(spe_95))
             spe_99 = model.spe_interval(pc, 0.99)
             print('spe_99: ' + str(spe_99))
+            graph.update_confidence_intervals(spe_95, spe_99)
         else:
             # TODO: Add alert. Or better: disable button when no latent variable model is selected
             print("This model hasn't score plot!")
@@ -289,15 +319,19 @@ class AnalyzeLatentController(GraphController):
             pcy = graph.selector_PCY.currentIndex()
             points = model.scores2(pcx, pcy)
             graph.update_data(points)
-        elif graph.get_type() == GraphType.loading_plot:
-            pcx = graph.selector_PCX.currentIndex()
-            pcy = graph.selector_PCY.currentIndex()
-            points = model.loadings(pcx, pcy)
-            graph.update_data(points)
-            graph.update_points_labels()
         elif graph.get_type() == GraphType.score_line_plot:
             pcy = graph.selector_PC.currentIndex()
             points = model.scores(pcy)
+            graph.update_data(points)
+        elif graph.get_type() == GraphType.loading_plot:
+            pcx = graph.selector_PCX.currentIndex()
+            pcy = graph.selector_PCY.currentIndex()
+            points = model.loadings2(pcx, pcy)
+            graph.update_data(points)
+            graph.update_points_labels()
+        elif graph.get_type() == GraphType.loading_line_plot:
+            pc = graph.selector_PC.currentIndex()
+            points = model.loadings(pc)
             graph.update_data(points)
         elif graph.get_type() == GraphType.t2_hotelling:
             pc1 = graph.selector_PC.currentIndex()
@@ -313,4 +347,9 @@ class AnalyzeLatentController(GraphController):
             pc = graph.selector_PC.currentIndex()
             points = model.spe(pc)
             graph.update_data(points)
+            spe_95 = model.spe_interval(pc, 0.95)
+            print('spe_95: ' + str(spe_95))
+            spe_99 = model.spe_interval(pc, 0.99)
+            print('spe_99: ' + str(spe_99))
+            graph.update_confidence_intervals(spe_95, spe_99)
 

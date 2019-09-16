@@ -14,6 +14,7 @@ from enum import Enum
 # TODO: Line plots whose x axis is time.
 #  - Maybe it can change in days
 # TODO: Change size of symbols depending on number of observations
+# TODO: Study how optimize complex graphs understanding PyQtGraph
 class GraphType(Enum):
     line_plot = 1
     obs_graph = 2
@@ -24,8 +25,10 @@ class GraphType(Enum):
     score_plot = 7
     score_line_plot = 8
     loading_plot = 9
-    t2_hotelling = 10
-    spe = 11
+    loading_line_plot = 10
+    t2_hotelling = 11
+    spe = 12
+
 
 def interpolate_color(initial_color, end_color, initial, end, num):
     num = num - initial
@@ -33,13 +36,14 @@ def interpolate_color(initial_color, end_color, initial, end, num):
     min_r = min(initial_color.redF(), end_color.redF())
     max_r = max(initial_color.redF(), end_color.redF())
     r_grades = np.linspace(initial_color.red(), end_color.red(), 255, endpoint=True)
-    r = r_grades[int(num*255)-1]
+    r = r_grades[int(num*(255-1))]
     g_grades = np.linspace(initial_color.green(), end_color.green(), 255, endpoint=True)
-    g = g_grades[int(num*255)-1]
+    g = g_grades[int(num*(255-1))]
     b_grades = np.linspace(initial_color.blue(), end_color.blue(), 255, endpoint=True)
-    b = b_grades[int(num*255)-1]
+    b = b_grades[int(num*(255-1))]
     # return QtGui.QColor(r, g, b)
     return QtGui.QColor(r, g, b)
+
 
 # TODO: Allow panning with % limits
 # TODO: Allow zooming with % limits
@@ -53,6 +57,7 @@ class MVAQPlot(MVAQWidget):
         MVAQWidget.__init__(self, parent=parent)
         self.setFocus()
         self._title = title
+        self.setWindowTitle(title)
         self._can_select = can_select
         if can_select:
             # object cration
@@ -128,17 +133,18 @@ class VarianceExplainedGraph(MVAQPlot):
         layout.addWidget(self.graphics_layout)
         self.setLayout(layout)
 
-
+# TODO: A beautiful example of Pearson Correlation graph
+#  https://towardsdatascience.com/handling-missing-values-in-machine-learning-part-2-222154b4b58e
 class CorrelationPlot(MVAQPlot):
 
     def __init__(self, type, data_set_name, data_set_list, parent=None):
         self._type = type
         self._data_set_name = data_set_name
         self._data_set_list = data_set_list
-        title = 'Correlation plot - ' + data_set_name
+        self._title = 'Correlation plot - ' + data_set_name
         can_select = False
 
-        MVAQPlot.__init__(self, can_select=can_select, parent=parent, title=title)
+        MVAQPlot.__init__(self, can_select=can_select, parent=parent, title=self._title)
 
         self.graphics_layout.setContentsMargins(0, 0, 0, 0)
         self._combo_width = 200
@@ -159,12 +165,29 @@ class CorrelationPlot(MVAQPlot):
         self.selector_data_set.setMinimumWidth(self._combo_width)
         self.selector_data_set.addItems(self._data_set_list)
 
+        # Title and description labels
+        label = QLabel()
+        label.setText(self._title)
+        label.setFont(QtGui.QFont("Arial", 12))
+        label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        label.setAlignment(QtCore.Qt.AlignCenter)
+        description_label = QLabel()
+        description_label.setText("Values range from red (positive correlation) to blue (negative correlation)")
+        description_label.setFont(QtGui.QFont("Arial", 8))
+        description_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        description_label.setAlignment(QtCore.Qt.AlignCenter)
+
         # Layouts
         selectors_layout.addWidget(label_data_set)
         selectors_layout.addWidget(self.selector_data_set)
         selectors_layout.setAlignment(QtCore.Qt.AlignCenter)
 
         general_layout.addLayout(selectors_layout)
+        general_layout.addItem(QSpacerItem(0, 10))
+        general_layout.addWidget(label)
+        general_layout.addItem(QSpacerItem(0, 10))
+        general_layout.addWidget(description_label)
+        general_layout.addItem(QSpacerItem(0, 10))
         general_layout.addWidget(self.graphics_layout)
 
         self.setLayout(general_layout)
@@ -180,12 +203,18 @@ class CorrelationPlot(MVAQPlot):
         for i_row, row in enumerate(correlation_matrix):
             self.graphics_layout.addLabel(var_names[i_row])
             for corr in row:
-                color = interpolate_color(get_style().palette(5), get_style().palette(6), 0, 1, corr)
+                if corr < 0:
+                    color = interpolate_color(get_style().palette(5),
+                                              QtGui.QColor(255,255,255), -1, 0, corr)
+                else:
+                    color = interpolate_color(QtGui.QColor(255,255,255),
+                                              get_style().palette(6), 0, 1, corr)
                 plot = self.graphics_layout.addPlot(axisItems=None)
                 plot.hideAxis('left')
                 plot.hideAxis('bottom')
-                plot.setWindowTitle(self._title)
                 plot.getViewBox().setBackgroundColor(color)
+                text = pg.TextItem(str(round(corr, 2)), anchor=(0.5, 0.5), color=(50, 50, 50))
+                plot.addItem(text)
             self.graphics_layout.nextRow()
 
     def get_type(self):
@@ -400,10 +429,10 @@ class ObsGraph(MVAQPlot):
     def get_type(self):
         return self._type
 
-
+# TODO: Add a bar with two points to define the visible range
 class LinePlot(MVAQPlot):
 
-    def __init__(self, type, model_name, points, num_components, parent=None):
+    def __init__(self, type, model_name, points, num_components, var_names = None, parent=None):
         self._type = type
         self._ys = points
         self._xs = list(range(len(self._ys)))
@@ -411,6 +440,9 @@ class LinePlot(MVAQPlot):
 
         if type == GraphType.score_line_plot:
             title = 'Score plot - ' + model_name
+            can_select = True
+        elif type == GraphType.loading_line_plot:
+            title = "Loading plot - " + model_name
             can_select = True
         elif type == GraphType.t2_hotelling:
             title = "Hotelling's T2 - " + model_name
@@ -424,18 +456,24 @@ class LinePlot(MVAQPlot):
         self._num_xs = len(self._xs)
         self._selected = [False] * self._num_xs
 
+        if var_names is not None:
+            var_dict = dict(enumerate(var_names))
+            self._x_axis = pg.AxisItem(orientation='bottom')
+            self._x_axis.setTicks([var_dict.items()])
+
         self._roi = None
         self._roi_pen = pg.mkPen(width=2)
         self._roi_pen.setBrush(QtGui.QBrush(get_style().palette(2), QtCore.Qt.SolidPattern))
 
         # TODO: As normal practice, import QtGui (and others) to make lines shorter
         #Confidence intervals
-        interval_95_pen = pg.mkPen(width=1, style=QtCore.Qt.DashLine)
-        interval_95_pen.setBrush(QtGui.QBrush(get_style().palette(6), QtCore.Qt.SolidPattern))
-        self._interval_95_roi = pg.LineSegmentROI([1000, -1000], 10, angle=-45, pen=interval_95_pen)
-        interval_99_pen = pg.mkPen(width=1)
-        interval_99_pen.setBrush(QtGui.QBrush(get_style().palette(6), QtCore.Qt.SolidPattern))
-        self._interval_99_roi = pg.LineSegmentROI([1000, -1000], 10, angle=-45, pen=interval_99_pen)
+        if self._type is not GraphType.score_line_plot and self._type is not GraphType.loading_line_plot:
+            interval_95_pen = pg.mkPen(width=1, style=QtCore.Qt.DashLine)
+            interval_95_pen.setBrush(QtGui.QBrush(get_style().palette(6), QtCore.Qt.SolidPattern))
+            self._interval_95_roi = pg.LineSegmentROI([10000, -1000], 10, angle=-45, pen=interval_95_pen)
+            interval_99_pen = pg.mkPen(width=1)
+            interval_99_pen.setBrush(QtGui.QBrush(get_style().palette(6), QtCore.Qt.SolidPattern))
+            self._interval_99_roi = pg.LineSegmentROI([10000, -1000], 10, angle=-45, pen=interval_99_pen)
 
         self._combo_width = 50
         self._size_points = 12
@@ -479,9 +517,12 @@ class LinePlot(MVAQPlot):
         self._scatter_plot = pg.ScatterPlotItem()
         # graphics_layout and items
         self.graphics_layout.setContentsMargins(10, 10, 10, 10)
-        if self._type == GraphType.score_line_plot:
+        if self._type == GraphType.score_line_plot or self._type == GraphType.loading_line_plot:
             self._plot_label_PCY = self.graphics_layout.addLabel('Principal component', angle=-90, col=0, rowspan=2)
-        self._plot = self.graphics_layout.addPlot(title=self._title)
+        if self._type == GraphType.loading_line_plot:
+            self._plot = self.graphics_layout.addPlot(title=self._title, axisItems={'bottom': self._x_axis})
+        else:
+            self._plot = self.graphics_layout.addPlot(title=self._title)
         self.set_confidence_intervals()
         self.graphics_layout.nextRow()
         self._plot_label_obs = self.graphics_layout.addLabel("Observations")
@@ -540,27 +581,29 @@ class LinePlot(MVAQPlot):
         self._plot_label_PCY.setText('PC ' + str(index_cpx + 1))
 
     def set_confidence_intervals(self):
-        self._text_95 = pg.TextItem(str('0.95'), anchor=(0.5, 1), color=get_style().palette(6))
-        self._text_99 = pg.TextItem(str('0.99'), anchor=(0.5, 1), color=get_style().palette(6))
-        self._plot.addItem(self._text_95)
-        self._plot.addItem(self._text_99)
-        self._plot.addItem(self._interval_95_roi, ignoreBounds=True)
-        self._plot.addItem(self._interval_99_roi, ignoreBounds=True)
-        if self._type == GraphType.score_line_plot:
-            pass
-        # self._confidence_intervals = [self._interval_95_roi, self._interval_99_roi]
-        # self._confidence_labels = [self._text_95, self._text_99]
+        if self._type is not GraphType.score_line_plot and self._type is not GraphType.loading_line_plot:
+            self._text_95 = pg.TextItem(str('0.95'), anchor=(0.5, 1), color=get_style().palette(6))
+            self._text_99 = pg.TextItem(str('0.99'), anchor=(0.5, 1), color=get_style().palette(6))
+            self._plot.addItem(self._text_95)
+            self._plot.addItem(self._text_99)
+            self._plot.addItem(self._interval_95_roi, ignoreBounds=True)
+            self._plot.addItem(self._interval_99_roi, ignoreBounds=True)
+            if self._type == GraphType.score_line_plot:
+                pass
+            # self._confidence_intervals = [self._interval_95_roi, self._interval_99_roi]
+            # self._confidence_labels = [self._text_95, self._text_99]
 
     def update_confidence_intervals(self, interval_95, interval_99):
-        if self._type == GraphType.score_line_plot:
-            pass
-        else:
-            point_95 = QtCore.QPointF(0, interval_95)
-            point_99 = QtCore.QPointF(0, interval_99)
-            self._text_95.setPos(point_95)
-            self._text_99.setPos(point_99)
-            self._interval_95_roi.setPos(pos=point_95)
-            self._interval_99_roi.setPos(pos=point_99)
+        if self._type is not GraphType.score_line_plot:
+            if self._type == GraphType.score_line_plot:
+                pass
+            else:
+                point_95 = QtCore.QPointF(0, interval_95)
+                point_99 = QtCore.QPointF(0, interval_99)
+                self._text_95.setPos(point_95)
+                self._text_99.setPos(point_99)
+                self._interval_95_roi.setPos(pos=point_95)
+                self._interval_99_roi.setPos(pos=point_99)
 
     def draw_selected(self, selected):
         self._selected = selected
@@ -612,7 +655,6 @@ class ScatterlotTwoComponents(MVAQPlot):
     def __init__(self, type, model_name, points, num_components, parent=None):
         self._type = type
         self._points = points
-        self._num_components = num_components
 
         # TODO: Obviously, this is not a good solution. There must be separate classes
         #  for each GraphType
@@ -628,18 +670,20 @@ class ScatterlotTwoComponents(MVAQPlot):
         self._num_points = len(points[0])
         self._selected = [False] * self._num_points
 
+        self._num_components = num_components
+
         self._roi = None
         self._roi_pen = pg.mkPen(width=2)
         self._roi_pen.setBrush(QtGui.QBrush(get_style().palette(2), QtCore.Qt.SolidPattern))
 
-        if self._type == GraphType.score_plot:
-            # Confidence intervals
-            interval_95_pen = pg.mkPen(width=1, style=QtCore.Qt.DashLine)
-            interval_95_pen.setBrush(QtGui.QBrush(get_style().palette(6), QtCore.Qt.SolidPattern))
-            self._interval_95_roi = pg.EllipseROI([0, 0], [1,1], pen=interval_95_pen)
-            interval_99_pen = pg.mkPen(width=1)
-            interval_99_pen.setBrush(QtGui.QBrush(get_style().palette(6), QtCore.Qt.SolidPattern))
-            self._interval_99_roi = pg.EllipseROI([0, 0], [1,1], pen=interval_99_pen)
+        # if self._type == GraphType.score_plot:
+        #     # Confidence intervals
+        #     interval_95_pen = pg.mkPen(width=1, style=QtCore.Qt.DashLine)
+        #     interval_95_pen.setBrush(QtGui.QBrush(get_style().palette(6), QtCore.Qt.SolidPattern))
+        #     self._interval_95_roi = pg.EllipseROI([0, 0], [1,1], pen=interval_95_pen)
+        #     interval_99_pen = pg.mkPen(width=1)
+        #     interval_99_pen.setBrush(QtGui.QBrush(get_style().palette(6), QtCore.Qt.SolidPattern))
+        #     self._interval_99_roi = pg.EllipseROI([0, 0], [1,1], pen=interval_99_pen)
 
         self._combo_width = 50
         self._size_points = 12
@@ -649,7 +693,8 @@ class ScatterlotTwoComponents(MVAQPlot):
     def init_UI(self):
         self.resize(600, 600)
         # TODO: fill with color the drawn area. Maybe with drawPolygon
-        self._roi = pg.PolyLineROI([], pen=self._roi_pen)
+        if self._type == GraphType.score_plot:
+            self._roi = pg.PolyLineROI([], pen=self._roi_pen)
 
         general_layout = QVBoxLayout(self)
         selectors_layout = QHBoxLayout(self)
@@ -677,19 +722,18 @@ class ScatterlotTwoComponents(MVAQPlot):
         self.graphics_layout.nextRow()
         self._plot_label_PCX = self.graphics_layout.addLabel("Principal component X")
         self._plot.addItem(self._scatter_plot)
-        self._plot.addItem(self._roi, ignoreBounds=True)
+        if self._type == GraphType.score_plot:
+            self._plot.addItem(self._roi, ignoreBounds=True)
         self._plot.setWindowTitle(self._title)
         # TODO: Change style to get a Seaborn's like grid
         self._plot.showGrid(x=True, y=True, alpha=0.3)
         self._plot.setMouseEnabled(x=False, y=False)
-        if self._type == GraphType.score_plot:
-            self.set_confidence_intervals()
-            self.update_confidence_intervals(1,2)
+        # if self._type == GraphType.score_plot:
+        #     self.set_confidence_intervals()
+        #     self.update_confidence_intervals(1,2)
         # Set data
         # TODO: Axis scale must be the same
         self.update_data(self._points)
-        self._plot.disableAutoRange()
-        self.center_plot(self._plot)
 
         # Layouts
         selectors_layout.addWidget(label_PCX)
@@ -703,6 +747,9 @@ class ScatterlotTwoComponents(MVAQPlot):
         general_layout.addWidget(self.graphics_layout)
 
         self.setLayout(general_layout)
+
+        self._plot.disableAutoRange()
+        self.center_plot(self._plot)
 
         self.set_children_focus_policy()
 
@@ -777,14 +824,10 @@ class ScatterlotTwoComponents(MVAQPlot):
         self._scatter_plot.setBrush(brushes)
 
     def get_points(self):
-        children_bounds = self._plot.getViewBox().childrenBounds()
-        print('children_bounds: ' + str(children_bounds))
-        self.center_plot(self._plot)
-
-        points = list()
+        self._q_points = list()
         for i in range(self._num_points):
-            points.append(QtCore.QPointF(self._points[0][i], self._points[1][i]))
-        return points
+            self._q_points.append(QtCore.QPointF(self._points[0][i], self._points[1][i]))
+        return self._q_points
 
     def get_selected(self):
         return self._selected
@@ -795,7 +838,6 @@ class ScatterlotTwoComponents(MVAQPlot):
     # TODO: All this logic must be in another layer
     def set_points_labels(self, texts):
         self._text_items = list()
-        points = self.get_points()
         print('texts: ' + str(texts))
         if len(texts) != self._num_points:
             print('Number of texts and points must be the same.')

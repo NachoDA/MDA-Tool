@@ -32,6 +32,7 @@ class MainWindow(QMainWindow, View):
     on_scores = pyqtSignal()
     on_line_scores = pyqtSignal()
     on_loadings = pyqtSignal()
+    on_line_loadings = pyqtSignal()
     on_t2_hotelling = pyqtSignal()
     on_spe = pyqtSignal()
     # Selection
@@ -45,7 +46,7 @@ class MainWindow(QMainWindow, View):
 
     def __init__(self):
         QMainWindow.__init__(self, None)
-        self.title = 'MVA Tool'
+        self.title = 'MDA Tool'
         self.width = 1280
         self.height = 800
         self.window_icon = get_icon('icon')
@@ -78,7 +79,7 @@ class MainWindow(QMainWindow, View):
         # Explore
         self._line_plot = self.add_action("Line plot", "line_plot", "Line plot", True, self.on_line_plot, QKSec.Paste)
         self._obs_plot = self.add_action("Obs plot", "obs_plot", "Observations plot", True, self.on_obs_plot, QKSec.Paste)
-        self._vars_plot = self.add_action("Vars plot", "obs_plot", "Observations plot", True, self.on_vars_plot, QKSec.Paste)
+        self._vars_plot = self.add_action("Vars plot", "vars_plot", "Observations plot", True, self.on_vars_plot, QKSec.Paste)
         self._scatter = self.add_action("Scatter", "scatter", "Scatter plot", True, self.on_scatter, QKSec.Paste)
         self._populations = self.add_action("Populations", "populations", "Populations plot", True, self.on_populations, QKSec.Paste)
         self._correlation_plot = self.add_action("Correlation", "correlation", "Plot correlation", True, self.on_correlation, QKSec.Paste)
@@ -87,6 +88,7 @@ class MainWindow(QMainWindow, View):
         self._scores = self.add_action("Score plot", "scores", "View scores", True, self.on_scores, QKSec.Paste)
         self._line_scores = self.add_action("Line scores", "line_scores", "View scores", True, self.on_line_scores, QKSec.Paste)
         self._loadings = self.add_action("Loadings", "loadings", "View loadings", True, self.on_loadings, QKSec.Paste)
+        self._line_loadings = self.add_action("Line loadings", "line_loadings", "View loadings", True, self.on_line_loadings, QKSec.Paste)
         self._t2_hotelling = self.add_action("Hotelling's T2", "hotelling", "View Hotelling's T2", True, self.on_t2_hotelling, QKSec.Paste)
         self._SPE = self.add_action("SPE-X", "spe", "View SPE-X", True, self.on_spe, QKSec.Paste)
         # Selection
@@ -113,7 +115,7 @@ class MainWindow(QMainWindow, View):
         self.new_project_button = QPushButton(self)
         self.new_project_button.setIcon(QIcon(new_project_icon))
         self.new_project_button.setObjectName('FromMenuBar')
-        load_icon = QtGui.QPixmap("icons/save.png")
+        load_icon = QtGui.QPixmap("icons/load_project.png")
         self.load_button = QPushButton(self)
         self.load_button.setIcon(QIcon(load_icon))
         self.load_button.setObjectName('FromMenuBar')
@@ -128,9 +130,9 @@ class MainWindow(QMainWindow, View):
         label.setText('Selected model: ')
         self.model_selector = QComboBox(self)
         self.model_selector.setMinimumWidth(300)
-        layout.addWidget(self.new_project_button)
-        layout.addWidget(self.load_button)
-        layout.addWidget(self.save_button)
+        # layout.addWidget(self.new_project_button)
+        # layout.addWidget(self.load_button)
+        # layout.addWidget(self.save_button)
         layout.addWidget(spacer)
         layout.addWidget(label)
         layout.addWidget(self.model_selector)
@@ -161,7 +163,7 @@ class MainWindow(QMainWindow, View):
         file_pane = home_tab.add_ribbon_pane("File")
         file_pane.add_ribbon_widget(RibbonButton(self, self._load_file_action, True))
         edit_panel = home_tab.add_ribbon_pane("Data set")
-        edit_panel.add_ribbon_widget(RibbonButton(self, self._new_data_set, True))
+        # edit_panel.add_ribbon_widget(RibbonButton(self, self._new_data_set, True))
         edit_panel.add_ribbon_widget(RibbonButton(self, self._edit_data_set, True))
         # edit_panel.add_ribbon_widget(RibbonButton(self, self._paste_action, True))
         # grid = edit_panel.add_grid_widget(200)
@@ -172,8 +174,8 @@ class MainWindow(QMainWindow, View):
         # grid.addWidget(self._text_box2, 2, 2)
         # grid.addWidget(self._text_box3, 3, 2)
 
-        view_panel = home_tab.add_ribbon_pane("View")
-        view_panel.add_ribbon_widget(RibbonButton(self, self._zoom_action, True))
+        # view_panel = home_tab.add_ribbon_pane("View")
+        # view_panel.add_ribbon_widget(RibbonButton(self, self._zoom_action, True))
         home_tab.add_spacer()
 
         # Explore
@@ -183,7 +185,7 @@ class MainWindow(QMainWindow, View):
         multivariate = explore_tab.add_ribbon_pane('Multivariate')
         multivariate.add_ribbon_widget(RibbonButton(self, self._obs_plot, True))
         multivariate.add_ribbon_widget(RibbonButton(self, self._vars_plot, True))
-        multivariate.add_ribbon_widget(RibbonButton(self, self._scatter, True))
+        # multivariate.add_ribbon_widget(RibbonButton(self, self._scatter, True))
         multivariate.add_ribbon_widget(RibbonButton(self, self._populations, True))
         multivariate.add_ribbon_widget(RibbonButton(self, self._correlation_plot, True))
         # Models
@@ -199,13 +201,14 @@ class MainWindow(QMainWindow, View):
         latent_variable_models.add_ribbon_widget(RibbonButton(self, self._scores, True))
         latent_variable_models.add_ribbon_widget(RibbonButton(self, self._line_scores, True))
         latent_variable_models.add_ribbon_widget(RibbonButton(self, self._loadings, True))
+        latent_variable_models.add_ribbon_widget(RibbonButton(self, self._line_loadings, True))
         latent_variable_models.add_ribbon_widget(RibbonButton(self, self._t2_hotelling, True))
         latent_variable_models.add_ribbon_widget(RibbonButton(self, self._SPE, True))
-        # About
-        about_tab = self._ribbon.add_ribbon_tab("About")
-        info_panel = about_tab.add_ribbon_pane("Info")
-        info_panel.add_ribbon_widget(RibbonButton(self, self._about_action, True))
-        info_panel.add_ribbon_widget(RibbonButton(self, self._license_action, True))
+        # # About
+        # about_tab = self._ribbon.add_ribbon_tab("About")
+        # info_panel = about_tab.add_ribbon_pane("Info")
+        # info_panel.add_ribbon_widget(RibbonButton(self, self._about_action, True))
+        # info_panel.add_ribbon_widget(RibbonButton(self, self._license_action, True))
 
     # TODO: Build a system to have a context tab (Selection, ...) and not only selection
     # "fixed tabs" and "context tabs"

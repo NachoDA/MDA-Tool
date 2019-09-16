@@ -14,6 +14,7 @@ class MainWindowModel(Model):
 
         if '.xls' in file_type or '.xlsx' in file_type:
             file_loaded = pd.read_excel(file_name, header=None, index_col=None)
-            print(file_loaded)
+        elif '.csv' in file_type:
+            file_loaded = pd.read_csv(file_name, header=None, index_col=None)
 
         return file_loaded
