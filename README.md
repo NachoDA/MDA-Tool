@@ -24,6 +24,4 @@ The software is developed in Python and makes use of the libraries PyQt5 (interf
 <img src="https://i.imgur.com/Ftd6eVU.png"></a>
 <img src="https://i.imgur.com/8GY1GZp.png"></a>
 <img src="https://i.imgur.com/N25G08Q.png"></a>
-<img src="https://i.imgur.com/V8dGoQ4.png"></a>
-
-Translated with www.DeepL.com/Translator (free version)
+<img src="https://i.imgur.com/V8dGoQ4.png"></a
