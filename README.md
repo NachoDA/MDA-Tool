@@ -6,7 +6,7 @@ The work was recognized by the **Cátedra Stadler awarding it in the category of
 
 <img src="https://i.imgur.com/LYJFsuj.png"></a>
 
-MDA Tool is a tool for multivariate process analysis focused on the use of latent variable models.
+**MDA Tool** is a tool for multivariate process analysis focused on the use of latent variable models.
 
 It is similar to AspenProMV or SIMCA but with some additions: different data visualizations, correlation chart or different data management. 
 
