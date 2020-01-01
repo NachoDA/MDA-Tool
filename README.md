@@ -1,6 +1,6 @@
 # MDA-Tool
 
-This software was developed as **End of Master's Work** for the Master's Degree in Information Management. This work, entitled "Development of an application for the statistical analysis of multivariate industrial processes", can be accessed via the following link: http://bit.ly/MDATool
+This software was developed as **Masters' Thesis** for the Master's Degree in Information Management. This work, entitled "Development of an application for the statistical analysis of multivariate industrial processes", can be accessed via the following link: http://bit.ly/MDATool
 
 The work was recognized by the **Cátedra Stadler awarding it in the category of "Analysis of data mining techniques"**.
 
